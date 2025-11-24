@@ -15,23 +15,23 @@ graph TB
         A --> C[Key Generation]
         A --> D[Signing Process]
         A --> E[Verification Process]
-        
+
         B --> B1[ML-DSA-44<br/>Category 2]
         B --> B2[ML-DSA-65<br/>Category 3]
         B --> B3[ML-DSA-87<br/>Category 5]
-        
+
         C --> F[algebra.rs<br/>Ring Operations]
         C --> G[sampling.rs<br/>Random Generation]
         C --> H[crypto.rs<br/>Hash Functions]
-        
+
         D --> F
         D --> I[encode.rs<br/>Serialization]
         D --> J[hint.rs<br/>Compression]
-        
+
         E --> F
         E --> I
         E --> J
-        
+
         F --> K[ntt.rs<br/>Polynomial Multiplication]
     end
 ```
@@ -51,14 +51,14 @@ graph LR
         HINT[hint.rs]
         UTIL[util.rs]
     end
-    
+
     LIB --> PARAM
     LIB --> ALG
     LIB --> CRYPTO
     LIB --> SAMPLE
     LIB --> ENCODE
     LIB --> HINT
-    
+
     ALG --> NTT
     ALG --> UTIL
     SAMPLE --> CRYPTO
@@ -71,10 +71,11 @@ graph LR
 ML-DSA defines three security levels with different parameter sets:
 
 - **ML-DSA-44**: Category 2 security (equivalent to AES-128)
-- **ML-DSA-65**: Category 3 security (equivalent to AES-192)  
+- **ML-DSA-65**: Category 3 security (equivalent to AES-192)
 - **ML-DSA-87**: Category 5 security (equivalent to AES-256)
 
 Each parameter set defines:
+
 - Matrix dimensions (k × l)
 - Signature size bounds
 - Security parameters (η, γ₁, γ₂, τ, β)
@@ -144,14 +145,14 @@ sequenceDiagram
     participant V as Verifier
     participant A as Algebra Module
     participant C as Crypto Module
-    
+
     Note over U,C: Key Generation Phase
     U->>KG: Generate keypair
     KG->>C: Generate matrix A using SHAKE-128
     KG->>A: Sample secret vectors s₁, s₂
     KG->>A: Compute t = As₁ + s₂
     KG->>U: Return (pk, sk)
-    
+
     Note over U,C: Signing Phase
     U->>S: Sign(message, sk)
     S->>A: Sample random y
@@ -160,7 +161,7 @@ sequenceDiagram
     S->>A: Calculate z = y + cs₁
     S->>S: Generate hints h
     S->>U: Return signature (c, z, h)
-    
+
     Note over U,C: Verification Phase
     U->>V: Verify(message, signature, pk)
     V->>V: Parse signature components
@@ -168,33 +169,6 @@ sequenceDiagram
     V->>C: Recompute challenge from public data
     V->>V: Validate hints and bounds
     V->>U: Return valid/invalid
-```
-
-```mermaid
-flowchart TD
-    subgraph "Cryptographic Operations Flow"
-        A[Message Input] --> B[Domain Separation]
-        B --> C{Operation Type}
-        
-        C -->|Key Generation| D[Sample Matrix A]
-        C -->|Signing| E[Sample Commitment y]
-        C -->|Verification| F[Parse Signature]
-        
-        D --> G[Sample Secrets s₁, s₂]
-        G --> H[Compute Public Key t]
-        H --> I[Encode Keys]
-        
-        E --> J[Compute w = Ay]
-        J --> K[Generate Challenge c]
-        K --> L[Compute Response z]
-        L --> M[Generate Hints h]
-        M --> N[Encode Signature]
-        
-        F --> O[Reconstruct Values]
-        O --> P[Verify Challenge]
-        P --> Q[Check Bounds]
-        Q --> R[Validation Result]
-    end
 ```
 
 #### Key Generation
@@ -210,8 +184,8 @@ flowchart TD
 2. **Commitment Generation**: Sample random y, compute w = Ay
 3. **Challenge Generation**: Create challenge c from w and message
 4. **Response Computation**: Calculate z = y + cs₁
-4. **Hint Generation**: Create hints for verification optimization
-5. **Signature Assembly**: Combine (c, z, h) into final signature
+5. **Hint Generation**: Create hints for verification optimization
+6. **Signature Assembly**: Combine (c, z, h) into final signature
 
 #### Verification Process
 
@@ -278,14 +252,14 @@ graph LR
         C --> D[Batch Operations<br/>Multiple elements]
         D --> E[Constant-Time<br/>Side-channel safe]
     end
-    
+
     subgraph "Benchmarking"
         F[Key Generation<br/>Performance]
         G[Signing Speed<br/>Latency]
         H[Verification Speed<br/>Throughput]
         I[Memory Usage<br/>Allocation]
     end
-    
+
     E --> F
     E --> G
     E --> H
