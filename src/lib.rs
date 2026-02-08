@@ -41,9 +41,13 @@ use crate::sampling::{expand_a, expand_mask, expand_s, sample_in_ball};
 use crate::util::{B32, B64};
 use core::fmt;
 use hybrid_array::{typenum::Unsigned, Array};
+use signature::{MultipartSigner, MultipartVerifier, Signer};
 
 #[cfg(feature = "rand_core")]
 use rand_core::CryptoRng;
+
+#[cfg(feature = "rand_core")]
+use signature::{RandomizedMultipartSigner, RandomizedSigner};
 
 /// ML-DSA seeds are signing (private) keys, which are consistently 32-bytes across all security
 /// levels, and are the preferred serialization for representing such keys.
@@ -188,6 +192,26 @@ impl<P: MlDsaParams> fmt::Debug for KeyPair<P> {
         f.debug_struct("KeyPair")
             .field("verifying_key", &self.verifying_key)
             .finish_non_exhaustive()
+    }
+}
+
+impl<P: MlDsaParams> signature::KeypairRef for KeyPair<P> {
+    type VerifyingKey = VerifyingKey<P>;
+}
+
+/// The `Signer` implementation for `KeyPair` uses the optional deterministic variant of ML-DSA,
+/// and only supports signing with an empty context string.
+impl<P: MlDsaParams> Signer<Signature<P>> for KeyPair<P> {
+    fn try_sign(&self, msg: &[u8]) -> Result<Signature<P>, Error> {
+        self.try_multipart_sign(&[msg])
+    }
+}
+
+/// The `MultipartSigner` implementation for `KeyPair` uses the optional deterministic variant of
+/// ML-DSA, and only supports signing with an empty context string.
+impl<P: MlDsaParams> MultipartSigner<Signature<P>> for KeyPair<P> {
+    fn try_multipart_sign(&self, msg: &[&[u8]]) -> Result<Signature<P>, Error> {
+        self.signing_key.raw_sign_deterministic(msg, &[])
     }
 }
 
@@ -379,14 +403,12 @@ impl<P: MlDsaParams> SigningKey<P> {
     }
 
     /// Derive a `VerifyingKey` from this `SigningKey`.
+    ///
+    /// This is a convenience method that delegates to the [`signature::Keypair`] trait
+    /// implementation.
     pub fn verifying_key(&self) -> VerifyingKey<P> {
-        let As1 = &self.A_hat * &self.s1_hat;
-        let t = &As1.ntt_inverse() + &self.s2;
-
-        // Discard t0
-        let (t1, _) = t.power2round();
-
-        VerifyingKey::new(self.rho.clone(), t1, Some(self.A_hat.clone()), None)
+        let kp: &dyn signature::Keypair<VerifyingKey = VerifyingKey<P>> = self;
+        kp.verifying_key()
     }
 
     /// Encode the key in a fixed-size byte array.
@@ -418,6 +440,68 @@ impl<P: MlDsaParams> SigningKey<P> {
             P::decode_t0(t0_enc),
             None,
         )
+    }
+}
+
+/// The `Signer` implementation for `SigningKey` uses the optional deterministic variant of ML-DSA,
+/// and only supports signing with an empty context string. If you would like to include a context
+/// string, use the [`SigningKey::sign_deterministic`] method.
+impl<P: MlDsaParams> Signer<Signature<P>> for SigningKey<P> {
+    fn try_sign(&self, msg: &[u8]) -> Result<Signature<P>, Error> {
+        self.try_multipart_sign(&[msg])
+    }
+}
+
+/// The `MultipartSigner` implementation for `SigningKey` uses the optional deterministic variant
+/// of ML-DSA, and only supports signing with an empty context string. If you would like to
+/// include a context string, use the [`SigningKey::sign_deterministic`] method.
+impl<P: MlDsaParams> MultipartSigner<Signature<P>> for SigningKey<P> {
+    fn try_multipart_sign(&self, msg: &[&[u8]]) -> Result<Signature<P>, Error> {
+        self.raw_sign_deterministic(msg, &[])
+    }
+}
+
+/// The `Keypair` implementation for `SigningKey` allows deriving a `VerifyingKey` from a bare
+/// `SigningKey` (even in the absence of the original seed).
+impl<P: MlDsaParams> signature::Keypair for SigningKey<P> {
+    type VerifyingKey = VerifyingKey<P>;
+
+    fn verifying_key(&self) -> Self::VerifyingKey {
+        let As1 = &self.A_hat * &self.s1_hat;
+        let t = &As1.ntt_inverse() + &self.s2;
+
+        // Discard t0
+        let (t1, _) = t.power2round();
+
+        VerifyingKey::new(self.rho.clone(), t1, Some(self.A_hat.clone()), None)
+    }
+}
+
+/// The `RandomizedSigner` implementation for `SigningKey` only supports signing with an empty
+/// context string. If you would like to include a context string, use the
+/// [`SigningKey::sign_randomized`] method.
+#[cfg(feature = "rand_core")]
+impl<P: MlDsaParams> RandomizedSigner<Signature<P>> for SigningKey<P> {
+    fn try_sign_with_rng<R: rand_core::TryCryptoRng + ?Sized>(
+        &self,
+        rng: &mut R,
+        msg: &[u8],
+    ) -> Result<Signature<P>, Error> {
+        self.try_multipart_sign_with_rng(rng, &[msg])
+    }
+}
+
+/// The `RandomizedMultipartSigner` implementation for `SigningKey` only supports signing with an
+/// empty context string. If you would like to include a context string, use the
+/// [`SigningKey::sign_randomized`] method.
+#[cfg(feature = "rand_core")]
+impl<P: MlDsaParams> RandomizedMultipartSigner<Signature<P>> for SigningKey<P> {
+    fn try_multipart_sign_with_rng<R: rand_core::TryCryptoRng + ?Sized>(
+        &self,
+        rng: &mut R,
+        msg: &[&[u8]],
+    ) -> Result<Signature<P>, Error> {
+        self.raw_sign_randomized(msg, &[], rng)
     }
 }
 
@@ -523,6 +607,20 @@ impl<P: MlDsaParams> VerifyingKey<P> {
         let (rho, t1_enc) = P::split_vk(enc);
         let t1 = P::decode_t1(t1_enc);
         Self::new(rho.clone(), t1, None, Some(enc.clone()))
+    }
+}
+
+impl<P: MlDsaParams> signature::Verifier<Signature<P>> for VerifyingKey<P> {
+    fn verify(&self, msg: &[u8], signature: &Signature<P>) -> Result<(), Error> {
+        self.multipart_verify(&[msg], signature)
+    }
+}
+
+impl<P: MlDsaParams> MultipartVerifier<Signature<P>> for VerifyingKey<P> {
+    fn multipart_verify(&self, msg: &[&[u8]], signature: &Signature<P>) -> Result<(), Error> {
+        self.raw_verify_with_context(msg, &[], signature)
+            .then_some(())
+            .ok_or(Error::new())
     }
 }
 
@@ -804,5 +902,142 @@ mod test {
         test_derived_vk::<MlDsa44>();
         test_derived_vk::<MlDsa65>();
         test_derived_vk::<MlDsa87>();
+    }
+
+    // ========================================================================
+    // Signature trait integration tests
+    // ========================================================================
+
+    #[test]
+    fn signer_verifier_trait_round_trip() {
+        use signature::{Signer, Verifier};
+
+        fn test_signer_verifier<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+            let sk = kp.signing_key();
+            let vk = kp.verifying_key();
+
+            let msg = b"Hello world";
+            let sig: Signature<P> = sk.sign(msg);
+            assert!(vk.verify(msg, &sig).is_ok());
+            assert!(vk.verify(b"Wrong message", &sig).is_err());
+        }
+        test_signer_verifier::<MlDsa44>();
+        test_signer_verifier::<MlDsa65>();
+        test_signer_verifier::<MlDsa87>();
+    }
+
+    #[test]
+    fn keypair_signer_trait() {
+        use signature::{Signer, Verifier};
+
+        fn test_keypair_signer<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+
+            let msg = b"Signed by keypair";
+            let sig: Signature<P> = kp.sign(msg);
+            assert!(kp.verifying_key().verify(msg, &sig).is_ok());
+        }
+        test_keypair_signer::<MlDsa44>();
+        test_keypair_signer::<MlDsa65>();
+        test_keypair_signer::<MlDsa87>();
+    }
+
+    #[test]
+    fn keypair_ref_trait() {
+        fn test_keypair_ref<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+            let vk_from_trait: VerifyingKey<P> = signature::Keypair::verifying_key(&kp);
+            assert_eq!(vk_from_trait.encode(), kp.verifying_key().encode());
+        }
+        test_keypair_ref::<MlDsa44>();
+        test_keypair_ref::<MlDsa65>();
+        test_keypair_ref::<MlDsa87>();
+    }
+
+    #[test]
+    fn signing_key_keypair_trait() {
+        use signature::{Keypair, Signer, Verifier};
+
+        fn test_sk_keypair<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array([42u8; 32]));
+            let sk = kp.signing_key();
+
+            // Derive verifying key via Keypair trait
+            let vk: VerifyingKey<P> = Keypair::verifying_key(sk);
+            assert_eq!(vk.encode(), kp.verifying_key().encode());
+
+            // Sign and verify using derived key
+            let msg = b"Keypair trait test";
+            let sig: Signature<P> = sk.sign(msg);
+            assert!(vk.verify(msg, &sig).is_ok());
+        }
+        test_sk_keypair::<MlDsa44>();
+        test_sk_keypair::<MlDsa65>();
+        test_sk_keypair::<MlDsa87>();
+    }
+
+    #[test]
+    fn multipart_signer_verifier_trait() {
+        use signature::{MultipartSigner, MultipartVerifier};
+
+        fn test_multipart<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+            let sk = kp.signing_key();
+            let vk = kp.verifying_key();
+
+            let parts: &[&[u8]] = &[b"Hello", b" ", b"world"];
+            let sig: Signature<P> = sk.multipart_sign(parts);
+            assert!(vk.multipart_verify(parts, &sig).is_ok());
+
+            // Different parts should fail
+            let wrong_parts: &[&[u8]] = &[b"Hello", b" ", b"wrong"];
+            assert!(vk.multipart_verify(wrong_parts, &sig).is_err());
+        }
+        test_multipart::<MlDsa44>();
+        test_multipart::<MlDsa65>();
+        test_multipart::<MlDsa87>();
+    }
+
+    #[test]
+    fn signature_encoding_trait() {
+        use signature::SignatureEncoding;
+
+        fn test_encoding<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+            let sk = kp.signing_key();
+
+            let msg = b"Encoding test";
+            let sig: Signature<P> = sk.sign_deterministic(msg, &[]).unwrap();
+
+            // to_bytes round-trip
+            let bytes = sig.to_bytes();
+            let sig2 = Signature::<P>::try_from(bytes.as_ref()).unwrap();
+            assert_eq!(sig, sig2);
+        }
+        test_encoding::<MlDsa44>();
+        test_encoding::<MlDsa65>();
+        test_encoding::<MlDsa87>();
+    }
+
+    #[test]
+    fn randomized_signer_trait() {
+        use rand::rngs::StdRng;
+        use rand::SeedableRng;
+        use signature::{RandomizedSigner, Verifier};
+
+        fn test_randomized<P: MlDsaParams>() {
+            let kp = P::from_seed(&Array::default());
+            let sk = kp.signing_key();
+            let vk = kp.verifying_key();
+
+            let mut rng = StdRng::seed_from_u64(42);
+            let msg = b"Randomized signing";
+            let sig: Signature<P> = sk.sign_with_rng(&mut rng, msg);
+            assert!(vk.verify(msg, &sig).is_ok());
+        }
+        test_randomized::<MlDsa44>();
+        test_randomized::<MlDsa65>();
+        test_randomized::<MlDsa87>();
     }
 }

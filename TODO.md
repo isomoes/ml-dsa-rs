@@ -219,17 +219,17 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 These two tracks can proceed **concurrently**.
 
-### Track H: Signature Crate Integration
+### Track H: Signature Crate Integration — DONE
 
 **Depends on**: Level 4
 
-- [ ] Implement `signature::Signer` for `SigningKey<P>` and `KeyPair<P>`
-- [ ] Implement `signature::Verifier` for `VerifyingKey<P>`
-- [ ] Implement `signature::Keypair` for `KeyPair<P>`
-- [ ] Implement `signature::SignatureEncoding` for `Signature<P>`
-- [ ] Implement `MultipartSigner` / `MultipartVerifier`
-- [ ] Implement `DigestSigner<Shake256>` / `DigestVerifier<Shake256>`
-- [ ] Implement `RandomizedSigner` (feature-gated on `rand_core`)
+- [x] Implement `signature::Signer` for `SigningKey<P>` and `KeyPair<P>`
+- [x] Implement `signature::Verifier` for `VerifyingKey<P>`
+- [x] Implement `signature::Keypair` for `KeyPair<P>` (via `KeypairRef`) and `SigningKey<P>` (direct)
+- [x] Implement `signature::SignatureEncoding` for `Signature<P>`
+- [x] Implement `MultipartSigner` / `MultipartVerifier`
+- [x] ~~Implement `DigestSigner<Shake256>` / `DigestVerifier<Shake256>`~~ — Skipped: requires `digest` feature on `signature` crate (not enabled in `signature 3.0.0-rc.1`)
+- [x] Implement `RandomizedSigner` / `RandomizedMultipartSigner` (feature-gated on `rand_core`)
 
 ### Track I: Testing & Validation
 
