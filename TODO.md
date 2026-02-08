@@ -6,20 +6,20 @@ This document outlines the implementation plan for ML-DSA (FIPS 204) based on th
 
 The `module_lattice` foundation layer is complete. Track A (core algebra) is complete. Remaining ML-DSA-specific modules are stubs.
 
-| Module | Status | Notes |
-|---|---|---|
-| `module_lattice/util` | **Done** | Truncate, Flatten, Unflatten |
-| `module_lattice/algebra` | **Done** | Field, Elem, Polynomial, Vector, NttPolynomial, NttVector, NttMatrix |
-| `module_lattice/encode` | **Done** | byte_encode/decode, Encode trait for Polynomial/Vector |
-| `param` | **Done** | Constants for ML-DSA-44/65/87 (raw constants, no traits yet) |
-| `lib` | **Partial** | Signature/SigningKey/VerifyingKey type shells only |
-| `algebra` | **Done** | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
-| `crypto` | Stub | |
-| `encode` | Stub | |
-| `hint` | Stub | |
-| `ntt` | Stub | |
-| `sampling` | Stub | |
-| `util` | Stub | |
+| Module                   | Status      | Notes                                                                          |
+| ------------------------ | ----------- | ------------------------------------------------------------------------------ |
+| `module_lattice/util`    | **Done**    | Truncate, Flatten, Unflatten                                                   |
+| `module_lattice/algebra` | **Done**    | Field, Elem, Polynomial, Vector, NttPolynomial, NttVector, NttMatrix           |
+| `module_lattice/encode`  | **Done**    | byte_encode/decode, Encode trait for Polynomial/Vector                         |
+| `param`                  | **Done**    | Constants for ML-DSA-44/65/87 (raw constants, no traits yet)                   |
+| `lib`                    | **Partial** | Signature/SigningKey/VerifyingKey type shells only                             |
+| `algebra`                | **Done**    | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
+| `crypto`                 | **Done**    | ShakeState (`G`/`H`) + SHAKE known vectors                                     |
+| `encode`                 | Stub        |                                                                                |
+| `hint`                   | Stub        |                                                                                |
+| `ntt`                    | Stub        |                                                                                |
+| `sampling`               | Stub        |                                                                                |
+| `util`                   | Stub        |                                                                                |
 
 ## Parallel Task Plan
 
@@ -78,6 +78,7 @@ The dependency graph allows significant parallelism. Below, tasks at the same le
 These three tracks have **no dependencies on each other** and can be implemented concurrently.
 
 ### Track A: Core Algebra (`src/algebra.rs`) — DONE
+
 **Depends on**: module_lattice (done)
 
 - [x] Define `BaseField` using `define_field!(BaseField, u32, u64, u128, 8_380_417)`
@@ -94,20 +95,22 @@ These three tracks have **no dependencies on each other** and can be implemented
 - [x] Add unit tests for all algebra operations
 
 ### Track B: Cryptographic Primitives (`src/crypto.rs`)
+
 **Depends on**: nothing (uses external sha3 crate)
 
-- [ ] Implement `ShakeState<Shake>` enum with `Absorbing`/`Squeezing` variants
-- [ ] Implement `absorb(&[u8])` method
-- [ ] Implement `squeeze(&mut [u8])` and `squeeze_new<N>()` methods
-- [ ] Define type aliases `G = ShakeState<Shake128>` and `H = ShakeState<Shake256>`
-- [ ] Add tests with known SHAKE test vectors
+- [x] Implement `ShakeState<Shake>` enum with `Absorbing`/`Squeezing` variants
+- [x] Implement `absorb(&[u8])` method
+- [x] Implement `squeeze(&mut [u8])` and `squeeze_new<N>()` methods
+- [x] Define type aliases `G = ShakeState<Shake128>` and `H = ShakeState<Shake256>`
+- [x] Add tests with known SHAKE test vectors
 
 ### Track C: Utility Types (`src/util.rs`)
+
 **Depends on**: nothing
 
-- [ ] Define `B32 = Array<u8, U32>` byte array type
-- [ ] Define `B64 = Array<u8, U64>` byte array type
-- [ ] Add any additional utility functions as needed
+- [x] Define `B32 = Array<u8, U32>` byte array type
+- [x] Define `B64 = Array<u8, U64>` byte array type
+- [x] Add any additional utility functions as needed
 
 ---
 
@@ -116,6 +119,7 @@ These three tracks have **no dependencies on each other** and can be implemented
 These tracks depend on Level 1 completions as noted, but are **independent of each other**.
 
 ### Track D: NTT (`src/ntt.rs`)
+
 **Depends on**: Track A (algebra)
 
 - [ ] Define `ZETA_POW_BITREV` precomputed table (powers of zeta=1753, bit-reversed order)
@@ -131,6 +135,7 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 - [ ] Add NTT round-trip tests and verify against FIPS 204 Appendix B
 
 ### Track E: ML-DSA Encoding (`src/encode.rs`)
+
 **Depends on**: Track A (algebra)
 
 - [ ] Implement `RangeEncodingSize` trait for `(A, B)` pairs
@@ -140,6 +145,7 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 - [ ] Add encoding round-trip tests for various bit widths
 
 ### Track F: Hint Operations (`src/hint.rs`)
+
 **Depends on**: Track A (algebra)
 
 - [ ] Implement `make_hint<TwoGamma2>(z, r) -> bool` — Algorithm 39 (MakeHint)
@@ -152,6 +158,7 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 - [ ] Add hint tests
 
 ### Track G: Sampling Functions (`src/sampling.rs`)
+
 **Depends on**: Track A (algebra) + Track B (crypto)
 
 - [ ] Implement `bit_set` — Algorithm 13 (BytesToBits)
@@ -194,6 +201,7 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 **Depends on**: All Level 2 tracks + Level 3
 
 ### Key Types
+
 - [ ] Redefine `Signature<P>` with fields: `c_tilde`, `z`, `h`
 - [ ] Redefine `SigningKey<P>` with fields: `rho`, `K`, `tr`, `s1`, `s2`, `t0` + derived NTT values (`s1_hat`, `s2_hat`, `t0_hat`, `A_hat`)
 - [ ] Redefine `VerifyingKey<P>` with fields: `rho`, `t1` + derived `A_hat`, `t1_2d_hat`, `tr`
@@ -201,21 +209,25 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 - [ ] Define `Seed = B32` type alias
 
 ### Key Generation
+
 - [ ] Implement `KeyGen` trait — Algorithm 1 (ML-DSA.KeyGen)
 - [ ] Implement `key_gen_internal` — Algorithm 6 (ML-DSA.KeyGen_internal)
 - [ ] Implement `SigningKey::from_seed()`
 
 ### Signing
+
 - [ ] Implement `sign_internal` — Algorithm 7 (ML-DSA.Sign_internal)
 - [ ] Implement `sign_deterministic` — Algorithm 2 (deterministic variant)
 - [ ] Implement `sign_randomized` — Algorithm 2 (randomized variant, feature-gated)
 - [ ] Implement `MuBuilder` for domain separation
 
 ### Verification
+
 - [ ] Implement `verify_internal` — Algorithm 8 (ML-DSA.Verify_internal)
 - [ ] Implement `verify_with_context` — Algorithm 3 (ML-DSA.Verify)
 
 ### Key/Signature Encoding
+
 - [ ] Implement `Signature::encode` / `Signature::decode` — Algorithms 26/27 (sigEncode/sigDecode)
 - [ ] Implement `VerifyingKey::encode` / `VerifyingKey::decode` — Algorithms 22/23 (pkEncode/pkDecode)
 - [ ] Implement `SigningKey::to_expanded` / `SigningKey::from_expanded` — Algorithms 24/25 (skEncode/skDecode)
@@ -227,6 +239,7 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 These two tracks can proceed **concurrently**.
 
 ### Track H: Signature Crate Integration
+
 **Depends on**: Level 4
 
 - [ ] Implement `signature::Signer` for `SigningKey<P>` and `KeyPair<P>`
@@ -238,6 +251,7 @@ These two tracks can proceed **concurrently**.
 - [ ] Implement `RandomizedSigner` (feature-gated on `rand_core`)
 
 ### Track I: Testing & Validation
+
 **Depends on**: Level 4
 
 - [ ] Add FIPS 204 Known Answer Tests (key-gen.json, sig-gen.json, sig-ver.json)
@@ -253,6 +267,7 @@ These two tracks can proceed **concurrently**.
 ## Level 6 — Optional Features & Polish
 
 ### Track J: Optional Features
+
 **Depends on**: Level 5
 
 - [ ] Implement PKCS#8 support (`pkcs8` feature):
@@ -265,6 +280,7 @@ These two tracks can proceed **concurrently**.
 - [ ] Add proper feature gates in `Cargo.toml`
 
 ### Track K: Documentation & Benchmarks
+
 **Depends on**: Level 5
 
 - [ ] Complete API documentation (resolve `missing_docs` warnings)
@@ -278,15 +294,15 @@ These two tracks can proceed **concurrently**.
 
 ## Summary: Parallel Execution Plan
 
-| Level | Tracks | Can Run In Parallel |
-|-------|--------|---------------------|
-| 0 | Foundation | **DONE** |
-| 1 | A (algebra), B (crypto), C (util) | **A DONE** ∥ B ∥ C |
-| 2 | D (ntt), E (encode), F (hint), G (sampling) | D ∥ E ∥ F ∥ G (after respective L1 deps) |
-| 3 | Param traits | Sequential (needs A + E) |
-| 4 | Core logic (lib.rs) | Sequential (needs all above) |
-| 5 | H (trait impls), I (testing) | H ∥ I |
-| 6 | J (optional features), K (docs/bench) | J ∥ K |
+| Level | Tracks                                      | Can Run In Parallel                      |
+| ----- | ------------------------------------------- | ---------------------------------------- |
+| 0     | Foundation                                  | **DONE**                                 |
+| 1     | A (algebra), B (crypto), C (util)           | **A DONE** ∥ B ∥ C                       |
+| 2     | D (ntt), E (encode), F (hint), G (sampling) | D ∥ E ∥ F ∥ G (after respective L1 deps) |
+| 3     | Param traits                                | Sequential (needs A + E)                 |
+| 4     | Core logic (lib.rs)                         | Sequential (needs all above)             |
+| 5     | H (trait impls), I (testing)                | H ∥ I                                    |
+| 6     | J (optional features), K (docs/bench)       | J ∥ K                                    |
 
 **Critical path**: A → D → Level 3 → Level 4 → Level 5
 

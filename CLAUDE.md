@@ -47,3 +47,7 @@ The project enforces:
 ## Reference Implementation
 
 This project follows the structure of the official RustCrypto ML-DSA implementation at https://github.com/RustCrypto/signatures/tree/master/ml-dsa
+
+## Task Completion Rule
+
+- If a task is finished, update the corresponding status in `TODO.md`.
