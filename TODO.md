@@ -4,7 +4,7 @@ This document outlines the implementation plan for ML-DSA (FIPS 204) based on th
 
 ## Current Status
 
-The `module_lattice` foundation layer is complete. All ML-DSA-specific modules are stubs.
+The `module_lattice` foundation layer is complete. Track A (core algebra) is complete. Remaining ML-DSA-specific modules are stubs.
 
 | Module | Status | Notes |
 |---|---|---|
@@ -13,7 +13,7 @@ The `module_lattice` foundation layer is complete. All ML-DSA-specific modules a
 | `module_lattice/encode` | **Done** | byte_encode/decode, Encode trait for Polynomial/Vector |
 | `param` | **Done** | Constants for ML-DSA-44/65/87 (raw constants, no traits yet) |
 | `lib` | **Partial** | Signature/SigningKey/VerifyingKey type shells only |
-| `algebra` | Stub | |
+| `algebra` | **Done** | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
 | `crypto` | Stub | |
 | `encode` | Stub | |
 | `hint` | Stub | |
@@ -77,21 +77,21 @@ The dependency graph allows significant parallelism. Below, tasks at the same le
 
 These three tracks have **no dependencies on each other** and can be implemented concurrently.
 
-### Track A: Core Algebra (`src/algebra.rs`)
+### Track A: Core Algebra (`src/algebra.rs`) — DONE
 **Depends on**: module_lattice (done)
 
-- [ ] Define `BaseField` using `define_field!(BaseField, u32, u64, u128, 8_380_417)`
-- [ ] Create type aliases: `Int`, `Elem`, `Polynomial`, `Vector<K>`, `NttPolynomial`, `NttVector<K>`, `NttMatrix<K, L>`
-- [ ] Implement `BarrettReduce` trait — Barrett modular reduction with precomputed constants
-- [ ] Implement `ConstantTimeDiv` trait — constant-time division via fixed-point multiplication
-- [ ] Implement `Decompose` trait for `Elem` — Algorithm 36 (Decompose)
-- [ ] Implement `AlgebraExt` trait:
-  - [ ] `mod_plus_minus<M>` — centered modular reduction
-  - [ ] `infinity_norm` — infinity norm for Elem, Polynomial, Vector
-  - [ ] `power2round` — Algorithm 35 (Power2Round)
-  - [ ] `high_bits<TwoGamma2>` — Algorithm 37 (HighBits)
-  - [ ] `low_bits<TwoGamma2>` — Algorithm 38 (LowBits)
-- [ ] Add unit tests for all algebra operations
+- [x] Define `BaseField` using `define_field!(BaseField, u32, u64, u128, 8_380_417)`
+- [x] Create type aliases: `Int`, `Elem`, `Polynomial`, `Vector<K>`, `NttPolynomial`, `NttVector<K>`, `NttMatrix<K, L>`
+- [x] Implement `BarrettReduce` trait — Barrett modular reduction with precomputed constants
+- [x] Implement `ConstantTimeDiv` trait — constant-time division via fixed-point multiplication
+- [x] Implement `Decompose` trait for `Elem` — Algorithm 36 (Decompose)
+- [x] Implement `AlgebraExt` trait:
+  - [x] `mod_plus_minus<M>` — centered modular reduction
+  - [x] `infinity_norm` — infinity norm for Elem, Polynomial, Vector
+  - [x] `power2round` — Algorithm 35 (Power2Round)
+  - [x] `high_bits<TwoGamma2>` — Algorithm 37 (HighBits)
+  - [x] `low_bits<TwoGamma2>` — Algorithm 38 (LowBits)
+- [x] Add unit tests for all algebra operations
 
 ### Track B: Cryptographic Primitives (`src/crypto.rs`)
 **Depends on**: nothing (uses external sha3 crate)
@@ -281,7 +281,7 @@ These two tracks can proceed **concurrently**.
 | Level | Tracks | Can Run In Parallel |
 |-------|--------|---------------------|
 | 0 | Foundation | **DONE** |
-| 1 | A (algebra), B (crypto), C (util) | A ∥ B ∥ C |
+| 1 | A (algebra), B (crypto), C (util) | **A DONE** ∥ B ∥ C |
 | 2 | D (ntt), E (encode), F (hint), G (sampling) | D ∥ E ∥ F ∥ G (after respective L1 deps) |
 | 3 | Param traits | Sequential (needs A + E) |
 | 4 | Core logic (lib.rs) | Sequential (needs all above) |
