@@ -155,25 +155,25 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 ---
 
-## Level 3 — Parameter Traits (`src/param.rs`)
+## Level 3 — Parameter Traits (`src/param.rs`) — DONE
 
 **Depends on**: Track A (algebra) + Track E (encode)
 
-- [ ] Refactor raw constants into trait-based parameterization
-- [ ] Define `ParameterSet` trait with associated types: `K`, `L`, `Eta`, `Gamma1`, `Gamma2`, `TwoGamma2`, `W1Bits`, `Lambda`, `Omega`, `TAU`, `BETA`
-- [ ] Define `SamplingSize` trait with `ETA` enum (`Two`, `Four`)
-- [ ] Define `MaskSamplingSize` trait with `SampleSize` and `unpack()`
-- [ ] Implement `SigningKeyParams` trait (blanket impl):
-  - [ ] `encode_s1/decode_s1`, `encode_s2/decode_s2`, `encode_t0/decode_t0`
-  - [ ] `concat_sk/split_sk`
-- [ ] Implement `VerifyingKeyParams` trait (blanket impl):
-  - [ ] `encode_t1/decode_t1`, `concat_vk/split_vk`
-- [ ] Implement `SignatureParams` trait (blanket impl):
-  - [ ] `encode_w1/decode_w1`, `encode_z/decode_z`
-  - [ ] `concat_sig/split_sig`, `split_hint`
-- [ ] Define `MlDsaParams` super-trait combining all param traits
-- [ ] Implement all traits for `MlDsa44`, `MlDsa65`, `MlDsa87`
-- [ ] Add parameter validation tests
+- [x] Refactor raw constants into trait-based parameterization
+- [x] Define `ParameterSet` trait with associated types: `K`, `L`, `Eta`, `Gamma1`, `Gamma2`, `TwoGamma2`, `W1Bits`, `Lambda`, `Omega`, `TAU`, `BETA`
+- [x] Define `SamplingSize` trait with `ETA` enum (`Two`, `Four`)
+- [x] Define `MaskSamplingSize` trait with `SampleSize` and `unpack()`
+- [x] Implement `SigningKeyParams` trait (blanket impl):
+  - [x] `encode_s1/decode_s1`, `encode_s2/decode_s2`, `encode_t0/decode_t0`
+  - [x] `concat_sk/split_sk`
+- [x] Implement `VerifyingKeyParams` trait (blanket impl):
+  - [x] `encode_t1/decode_t1`, `concat_vk/split_vk`
+- [x] Implement `SignatureParams` trait (blanket impl):
+  - [x] `encode_w1/decode_w1`, `encode_z/decode_z`
+  - [x] `concat_sig/split_sig`, `split_hint`
+- [x] Define `MlDsaParams` super-trait combining all param traits
+- [x] Implement all traits for `MlDsa44`, `MlDsa65`, `MlDsa87`
+- [x] Add parameter validation tests
 
 ---
 

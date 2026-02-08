@@ -3,50 +3,11 @@
 use crate::{
     algebra::{BaseField, Elem, Int, NttMatrix, NttPolynomial, NttVector, Polynomial, Vector},
     crypto::{G, H},
+    param::{Eta, MaskSamplingSize},
 };
 use hybrid_array::{Array, ArraySize};
 
 use crate::module_lattice::{algebra::Field, util::Truncate};
-
-/// Eta parameter used by bounded sampling.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) enum Eta {
-    /// ETA = 2.
-    Two,
-    /// ETA = 4.
-    Four,
-}
-
-/// Sampling-size adapter for Algorithm 34 (ExpandMask).
-pub(crate) trait MaskSamplingSize {
-    /// Number of bytes to squeeze for one polynomial.
-    const SAMPLE_SIZE: usize;
-
-    /// Unpack a squeezed byte slice into one polynomial.
-    fn unpack(v: &[u8]) -> Polynomial;
-}
-
-/// Gamma1 = 2^17 mask unpacker.
-pub(crate) struct Gamma1Power17;
-
-/// Gamma1 = 2^19 mask unpacker.
-pub(crate) struct Gamma1Power19;
-
-impl MaskSamplingSize for Gamma1Power17 {
-    const SAMPLE_SIZE: usize = 576;
-
-    fn unpack(v: &[u8]) -> Polynomial {
-        unpack_mask_poly(v, 18, 1 << 17)
-    }
-}
-
-impl MaskSamplingSize for Gamma1Power19 {
-    const SAMPLE_SIZE: usize = 640;
-
-    fn unpack(v: &[u8]) -> Polynomial {
-        unpack_mask_poly(v, 20, 1 << 19)
-    }
-}
 
 // Algorithm 13 BytesToBits.
 fn bit_set(z: &[u8], i: usize) -> bool {
@@ -101,38 +62,6 @@ fn coeffs_from_byte(z: u8, eta: Eta) -> (Option<Elem>, Option<Elem>) {
         coeff_from_half_byte(z & 0x0F, eta),
         coeff_from_half_byte(z >> 4, eta),
     )
-}
-
-fn read_bits_le(v: &[u8], bit_offset: usize, width: usize) -> u32 {
-    let mut out = 0u32;
-    for i in 0..width {
-        if bit_set(v, bit_offset + i) {
-            out |= 1 << i;
-        }
-    }
-
-    out
-}
-
-fn signed_to_elem(x: i32) -> Elem {
-    if x >= 0 {
-        Elem::new(u32::try_from(x).expect("non-negative i32 fits in u32"))
-    } else {
-        let abs = x.unsigned_abs();
-        Elem::new(BaseField::Q - abs)
-    }
-}
-
-fn unpack_mask_poly(v: &[u8], bits_per_coeff: usize, gamma1: u32) -> Polynomial {
-    let mut out = Polynomial::default();
-    for i in 0..256 {
-        let t = read_bits_le(v, i * bits_per_coeff, bits_per_coeff);
-        let c = i32::try_from(gamma1).expect("gamma1 fits i32")
-            - i32::try_from(t).expect("packed coeff fits i32");
-        out.0[i] = signed_to_elem(c);
-    }
-
-    out
 }
 
 // Algorithm 29 SampleInBall.
@@ -252,7 +181,7 @@ where
         let r: u16 = u16::truncate(r);
         ctx.absorb(&(mu + r).to_le_bytes());
 
-        let mut v = vec![0u8; Gamma1::SAMPLE_SIZE];
+        let mut v = Array::<u8, Gamma1::SampleSize>::default();
         ctx.squeeze(&mut v);
 
         Gamma1::unpack(&v)
@@ -368,15 +297,20 @@ mod tests {
 
     #[test]
     fn expand_mask_is_deterministic_for_both_gamma1_sizes() {
+        use hybrid_array::typenum::{Shleft, U1, U17, U19};
+
+        type Gamma1_17 = Shleft<U1, U17>;
+        type Gamma1_19 = Shleft<U1, U19>;
+
         let rho = [23u8; 64];
 
-        let m17a = expand_mask::<U3, Gamma1Power17>(&rho, 5);
-        let m17b = expand_mask::<U3, Gamma1Power17>(&rho, 5);
+        let m17a = expand_mask::<U3, Gamma1_17>(&rho, 5);
+        let m17b = expand_mask::<U3, Gamma1_17>(&rho, 5);
         assert_eq!(m17a, m17b);
         assert!(m17a.0.iter().all(|p| all_mask_in_range(p, 1 << 17)));
 
-        let m19a = expand_mask::<U3, Gamma1Power19>(&rho, 7);
-        let m19b = expand_mask::<U3, Gamma1Power19>(&rho, 7);
+        let m19a = expand_mask::<U3, Gamma1_19>(&rho, 7);
+        let m19b = expand_mask::<U3, Gamma1_19>(&rho, 7);
         assert_eq!(m19a, m19b);
         assert!(m19a.0.iter().all(|p| all_mask_in_range(p, 1 << 19)));
     }
