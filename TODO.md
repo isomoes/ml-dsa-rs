@@ -231,17 +231,17 @@ These two tracks can proceed **concurrently**.
 - [x] ~~Implement `DigestSigner<Shake256>` / `DigestVerifier<Shake256>`~~ — Skipped: requires `digest` feature on `signature` crate (not enabled in `signature 3.0.0-rc.1`)
 - [x] Implement `RandomizedSigner` / `RandomizedMultipartSigner` (feature-gated on `rand_core`)
 
-### Track I: Testing & Validation
+### Track I: Testing & Validation — DONE
 
 **Depends on**: Level 4
 
-- [ ] Add FIPS 204 Known Answer Tests (key-gen.json, sig-gen.json, sig-ver.json)
-- [ ] Add key generation round-trip tests
-- [ ] Add sign/verify round-trip tests
-- [ ] Add boundary condition tests (invalid signatures, wrong keys)
-- [ ] Add interoperability tests against reference implementation
-- [ ] Add property-based tests (proptest)
-- [ ] Add Wycheproof test vectors
+- [x] Add FIPS 204 Known Answer Tests (key-gen.json, sig-gen.json, sig-ver.json)
+- [x] Add key generation round-trip tests
+- [x] Add sign/verify round-trip tests
+- [x] Add boundary condition tests (invalid signatures, wrong keys)
+- [x] Add interoperability tests against reference implementation
+- [x] Add property-based tests (proptest)
+- [x] Add Wycheproof test vectors
 
 ---
 
@@ -290,8 +290,8 @@ These two tracks can proceed **concurrently**.
 ## Success Criteria
 
 - [ ] All ML-DSA-44/65/87 operations implemented correctly
-- [ ] Passes all FIPS 204 test vectors (key-gen, sig-gen, sig-ver)
-- [ ] Passes Wycheproof test vectors
+- [x] Passes all FIPS 204 test vectors (key-gen, sig-gen, sig-ver)
+- [x] Passes Wycheproof test vectors
 - [ ] Compatible with RustCrypto `signature` traits
 - [ ] No unsafe code
 - [ ] Comprehensive test coverage (>90%)
