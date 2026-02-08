@@ -17,7 +17,7 @@ The `module_lattice` foundation layer is complete. Track A (core algebra) is com
 | `crypto`                 | **Done**    | ShakeState (`G`/`H`) + SHAKE known vectors                                     |
 | `encode`                 | Stub        |                                                                                |
 | `hint`                   | Stub        |                                                                                |
-| `ntt`                    | Stub        |                                                                                |
+| `ntt`                    | **Done**    | NTT/NTT^-1, MultiplyNtt, ZETA_POW_BITREV table, round-trip tests              |
 | `sampling`               | Stub        |                                                                                |
 | `util`                   | Stub        |                                                                                |
 
@@ -122,17 +122,17 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 **Depends on**: Track A (algebra)
 
-- [ ] Define `ZETA_POW_BITREV` precomputed table (powers of zeta=1753, bit-reversed order)
-- [ ] Define `INVERSE_256` constant (8_347_681 mod Q)
-- [ ] Implement `ntt_layer` and `ntt_inverse_layer` helper functions
-- [ ] Implement `Ntt` trait — Algorithm 41 (NTT forward transform)
-  - [ ] For `Polynomial` → `NttPolynomial`
-  - [ ] For `Vector<K>` → `NttVector<K>`
-- [ ] Implement `NttInverse` trait — Algorithm 42 (NTT inverse transform)
-  - [ ] For `NttPolynomial` → `Polynomial`
-  - [ ] For `NttVector<K>` → `Vector<K>`
-- [ ] Implement `MultiplyNtt` for `BaseField` — Algorithm 45 (pointwise NTT multiplication)
-- [ ] Add NTT round-trip tests and verify against FIPS 204 Appendix B
+- [x] Define `ZETA_POW_BITREV` precomputed table (powers of zeta=1753, bit-reversed order)
+- [x] Define `INVERSE_256` constant (8_347_681 mod Q)
+- [x] Implement `ntt_layer` and `ntt_inverse_layer` helper functions
+- [x] Implement `Ntt` trait — Algorithm 41 (NTT forward transform)
+  - [x] For `Polynomial` → `NttPolynomial`
+  - [x] For `Vector<K>` → `NttVector<K>`
+- [x] Implement `NttInverse` trait — Algorithm 42 (NTT inverse transform)
+  - [x] For `NttPolynomial` → `Polynomial`
+  - [x] For `NttVector<K>` → `Vector<K>`
+- [x] Implement `MultiplyNtt` for `BaseField` — Algorithm 45 (pointwise NTT multiplication)
+- [x] Add NTT round-trip tests and verify against FIPS 204 Appendix B
 
 ### Track E: ML-DSA Encoding (`src/encode.rs`)
 

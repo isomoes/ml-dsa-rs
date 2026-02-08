@@ -2,7 +2,7 @@ use super::util::Truncate;
 
 use core::fmt::Debug;
 use core::ops::{Add, Mul, Neg, Sub};
-use hybrid_array::{Array, ArraySize, typenum::U256};
+use hybrid_array::{typenum::U256, Array, ArraySize};
 use num_traits::PrimInt;
 
 #[cfg(feature = "zeroize")]
@@ -32,7 +32,7 @@ pub trait Field: Copy + Default + Debug + PartialEq {
     /// Reduce a value that is at most 2*Q-1 to the range [0, Q)
     fn small_reduce(x: Self::Int) -> Self::Int;
     /// Reduce a larger value using Barrett reduction
-    /// 
+    ///
     /// Barrett reduction efficiently computes x mod q without expensive division
     /// It uses the precomputed multiplier to approximate division by q.
     /// Mathematical principle: ⌊x/q⌋ ≈ ⌊(x * ⌊2^k/q⌋) / 2^k⌋
@@ -80,7 +80,11 @@ macro_rules! define_field {
             const BARRETT_MULTIPLIER: Self::LongLong = (1 << Self::BARRETT_SHIFT) / Self::QLL;
 
             fn small_reduce(x: Self::Int) -> Self::Int {
-                if x < Self::Q { x } else { x - Self::Q }
+                if x < Self::Q {
+                    x
+                } else {
+                    x - Self::Q
+                }
             }
 
             fn barrett_reduce(x: Self::Long) -> Self::Int {
@@ -346,6 +350,27 @@ impl<F: Field> Mul<&NttPolynomial<F>> for Elem<F> {
     fn mul(self, rhs: &NttPolynomial<F>) -> NttPolynomial<F> {
         NttPolynomial(rhs.0.iter().map(|&x| self * x).collect())
     }
+}
+
+impl<F> Mul<&NttPolynomial<F>> for &NttPolynomial<F>
+where
+    F: Field + MultiplyNtt,
+{
+    type Output = NttPolynomial<F>;
+
+    fn mul(self, rhs: &NttPolynomial<F>) -> NttPolynomial<F> {
+        F::multiply_ntt(self, rhs)
+    }
+}
+
+/// Perform multiplication in the NTT domain.
+///
+/// This trait is implemented by downstream crates (e.g., ML-DSA, ML-KEM) to define
+/// how NTT polynomials are multiplied, since the multiplication rule depends on the
+/// specific NTT variant used by each scheme.
+pub trait MultiplyNtt: Field {
+    /// Multiply two NTT polynomials.
+    fn multiply_ntt(lhs: &NttPolynomial<Self>, rhs: &NttPolynomial<Self>) -> NttPolynomial<Self>;
 }
 
 impl<F: Field> Neg for &NttPolynomial<F> {
