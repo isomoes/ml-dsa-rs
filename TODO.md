@@ -16,7 +16,7 @@ The `module_lattice` foundation layer is complete. Track A (core algebra) is com
 | `algebra`                | **Done**    | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
 | `crypto`                 | **Done**    | ShakeState (`G`/`H`) + SHAKE known vectors                                     |
 | `encode`                 | **Done**    | RangeEncodingSize, BitPack for Polynomial/Vector, Algorithm 17                 |
-| `hint`                   | Stub        |                                                                                |
+| `hint`                   | **Done**    | make_hint/use_hint, hint packing/unpacking, tests                             |
 | `ntt`                    | **Done**    | NTT/NTT^-1, MultiplyNtt, ZETA_POW_BITREV table, round-trip tests              |
 | `sampling`               | Stub        |                                                                                |
 | `util`                   | Stub        |                                                                                |
@@ -148,14 +148,14 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 **Depends on**: Track A (algebra)
 
-- [ ] Implement `make_hint<TwoGamma2>(z, r) -> bool` — Algorithm 39 (MakeHint)
-- [ ] Implement `use_hint<TwoGamma2>(h, r) -> Elem` — Algorithm 40 (UseHint)
-- [ ] Implement `Hint<P>` struct with `Array<Array<bool, U256>, P::K>` field
-- [ ] Implement `Hint::new()` — create hint from two vectors
-- [ ] Implement `Hint::hamming_weight()` — count set bits
-- [ ] Implement `Hint::use_hint()` — apply hint to vector
-- [ ] Implement `Hint::bit_pack()` / `Hint::bit_unpack()` — hint encoding/decoding
-- [ ] Add hint tests
+- [x] Implement `make_hint<TwoGamma2>(z, r) -> bool` — Algorithm 39 (MakeHint)
+- [x] Implement `use_hint<TwoGamma2>(h, r) -> Elem` — Algorithm 40 (UseHint)
+- [x] Implement `Hint<P>` struct with `Array<Array<bool, U256>, P::K>` field
+- [x] Implement `Hint::new()` — create hint from two vectors
+- [x] Implement `Hint::hamming_weight()` — count set bits
+- [x] Implement `Hint::use_hint()` — apply hint to vector
+- [x] Implement `Hint::bit_pack()` / `Hint::bit_unpack()` — hint encoding/decoding
+- [x] Add hint tests
 
 ### Track G: Sampling Functions (`src/sampling.rs`)
 
