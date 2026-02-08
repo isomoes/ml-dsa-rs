@@ -15,7 +15,7 @@ The `module_lattice` foundation layer is complete. Track A (core algebra) is com
 | `lib`                    | **Partial** | Signature/SigningKey/VerifyingKey type shells only                             |
 | `algebra`                | **Done**    | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
 | `crypto`                 | **Done**    | ShakeState (`G`/`H`) + SHAKE known vectors                                     |
-| `encode`                 | Stub        |                                                                                |
+| `encode`                 | **Done**    | RangeEncodingSize, BitPack for Polynomial/Vector, Algorithm 17                 |
 | `hint`                   | Stub        |                                                                                |
 | `ntt`                    | **Done**    | NTT/NTT^-1, MultiplyNtt, ZETA_POW_BITREV table, round-trip tests              |
 | `sampling`               | Stub        |                                                                                |
@@ -138,11 +138,11 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 **Depends on**: Track A (algebra)
 
-- [ ] Implement `RangeEncodingSize` trait for `(A, B)` pairs
-- [ ] Define range encoding type aliases: `RangeMin`, `RangeMax`, `RangeEncodingBits`, `RangeEncodedPolynomial`, `RangeEncodedVector`
-- [ ] Implement `BitPack` trait for `Polynomial` — Algorithm 17 (BitPack/BitUnPack)
-- [ ] Implement `BitPack` trait for `Vector<K>`
-- [ ] Add encoding round-trip tests for various bit widths
+- [x] Implement `RangeEncodingSize` trait for `(A, B)` pairs
+- [x] Define range encoding type aliases: `RangeMin`, `RangeMax`, `RangeEncodingBits`, `RangeEncodedPolynomial`, `RangeEncodedVector`
+- [x] Implement `BitPack` trait for `Polynomial` — Algorithm 17 (BitPack/BitUnPack)
+- [x] Implement `BitPack` trait for `Vector<K>`
+- [x] Add encoding round-trip tests for various bit widths
 
 ### Track F: Hint Operations (`src/hint.rs`)
 
