@@ -2,25 +2,6 @@
 
 This document outlines the implementation plan for ML-DSA (FIPS 204) based on the [RustCrypto ML-DSA](https://github.com/RustCrypto/signatures/tree/master/ml-dsa) reference implementation.
 
-## Current Status
-
-The `module_lattice` foundation layer is complete. Track A (core algebra) is complete. Remaining ML-DSA-specific modules are stubs.
-
-| Module                   | Status      | Notes                                                                          |
-| ------------------------ | ----------- | ------------------------------------------------------------------------------ |
-| `module_lattice/util`    | **Done**    | Truncate, Flatten, Unflatten                                                   |
-| `module_lattice/algebra` | **Done**    | Field, Elem, Polynomial, Vector, NttPolynomial, NttVector, NttMatrix           |
-| `module_lattice/encode`  | **Done**    | byte_encode/decode, Encode trait for Polynomial/Vector                         |
-| `param`                  | **Done**    | Constants for ML-DSA-44/65/87 (raw constants, no traits yet)                   |
-| `lib`                    | **Partial** | Signature/SigningKey/VerifyingKey type shells only                             |
-| `algebra`                | **Done**    | BaseField, type aliases, BarrettReduce, ConstantTimeDiv, Decompose, AlgebraExt |
-| `crypto`                 | **Done**    | ShakeState (`G`/`H`) + SHAKE known vectors                                     |
-| `encode`                 | **Done**    | RangeEncodingSize, BitPack for Polynomial/Vector, Algorithm 17                 |
-| `hint`                   | **Done**    | make_hint/use_hint, hint packing/unpacking, tests                             |
-| `ntt`                    | **Done**    | NTT/NTT^-1, MultiplyNtt, ZETA_POW_BITREV table, round-trip tests              |
-| `sampling`               | Stub        |                                                                                |
-| `util`                   | Stub        |                                                                                |
-
 ## Parallel Task Plan
 
 The dependency graph allows significant parallelism. Below, tasks at the same level can be worked on **concurrently**.
@@ -161,16 +142,16 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 **Depends on**: Track A (algebra) + Track B (crypto)
 
-- [ ] Implement `bit_set` — Algorithm 13 (BytesToBits)
-- [ ] Implement `coeff_from_three_bytes` — Algorithm 14
-- [ ] Implement `coeff_from_half_byte` — Algorithm 15
-- [ ] Implement `sample_in_ball` — Algorithm 29 (SampleInBall)
-- [ ] Implement `rej_ntt_poly` — Algorithm 30 (RejNTTPoly) using `G` (SHAKE-128)
-- [ ] Implement `rej_bounded_poly` — Algorithm 31 (RejBoundedPoly) using `H` (SHAKE-256)
-- [ ] Implement `expand_a` — Algorithm 32 (ExpandA) → `NttMatrix<K, L>`
-- [ ] Implement `expand_s` — Algorithm 33 (ExpandS) → `Vector<K>`
-- [ ] Implement `expand_mask` — Algorithm 34 (ExpandMask) → `Vector<K>`
-- [ ] Add sampling tests
+- [x] Implement `bit_set` — Algorithm 13 (BytesToBits)
+- [x] Implement `coeff_from_three_bytes` — Algorithm 14
+- [x] Implement `coeff_from_half_byte` — Algorithm 15
+- [x] Implement `sample_in_ball` — Algorithm 29 (SampleInBall)
+- [x] Implement `rej_ntt_poly` — Algorithm 30 (RejNTTPoly) using `G` (SHAKE-128)
+- [x] Implement `rej_bounded_poly` — Algorithm 31 (RejBoundedPoly) using `H` (SHAKE-256)
+- [x] Implement `expand_a` — Algorithm 32 (ExpandA) → `NttMatrix<K, L>`
+- [x] Implement `expand_s` — Algorithm 33 (ExpandS) → `Vector<K>`
+- [x] Implement `expand_mask` — Algorithm 34 (ExpandMask) → `Vector<K>`
+- [x] Add sampling tests
 
 ---
 
@@ -291,18 +272,6 @@ These two tracks can proceed **concurrently**.
 - [ ] Update README with features and usage
 
 ---
-
-## Summary: Parallel Execution Plan
-
-| Level | Tracks                                      | Can Run In Parallel                      |
-| ----- | ------------------------------------------- | ---------------------------------------- |
-| 0     | Foundation                                  | **DONE**                                 |
-| 1     | A (algebra), B (crypto), C (util)           | **A DONE** ∥ B ∥ C                       |
-| 2     | D (ntt), E (encode), F (hint), G (sampling) | D ∥ E ∥ F ∥ G (after respective L1 deps) |
-| 3     | Param traits                                | Sequential (needs A + E)                 |
-| 4     | Core logic (lib.rs)                         | Sequential (needs all above)             |
-| 5     | H (trait impls), I (testing)                | H ∥ I                                    |
-| 6     | J (optional features), K (docs/bench)       | J ∥ K                                    |
 
 **Critical path**: A → D → Level 3 → Level 4 → Level 5
 
