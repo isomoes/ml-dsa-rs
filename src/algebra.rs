@@ -14,8 +14,8 @@
 use crate::module_lattice::algebra::Field;
 use crate::module_lattice::util::Truncate;
 use hybrid_array::{
+    typenum::{Shleft, Unsigned, U1, U13},
     ArraySize,
-    typenum::{Shleft, U1, U13, Unsigned},
 };
 
 crate::define_field!(BaseField, u32, u64, u128, 8_380_417);
@@ -301,7 +301,7 @@ impl<K: ArraySize> AlgebraExt for Vector<K> {
 #[allow(clippy::integer_division_remainder_used, reason = "tests")]
 mod test {
     use super::*;
-    use hybrid_array::typenum::{Prod, Quot, U2, U4, U32};
+    use hybrid_array::typenum::{Prod, Quot, U2, U32, U4};
 
     // ML-DSA-65 parameters for testing: Gamma2 = (Q-1)/32, TwoGamma2 = 2*Gamma2
     type QMinus1 = hybrid_array::typenum::Diff<

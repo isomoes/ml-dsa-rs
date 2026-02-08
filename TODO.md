@@ -177,41 +177,41 @@ These tracks depend on Level 1 completions as noted, but are **independent of ea
 
 ---
 
-## Level 4 — Core ML-DSA Logic (`src/lib.rs`)
+## Level 4 — Core ML-DSA Logic (`src/lib.rs`) — DONE
 
 **Depends on**: All Level 2 tracks + Level 3
 
 ### Key Types
 
-- [ ] Redefine `Signature<P>` with fields: `c_tilde`, `z`, `h`
-- [ ] Redefine `SigningKey<P>` with fields: `rho`, `K`, `tr`, `s1`, `s2`, `t0` + derived NTT values (`s1_hat`, `s2_hat`, `t0_hat`, `A_hat`)
-- [ ] Redefine `VerifyingKey<P>` with fields: `rho`, `t1` + derived `A_hat`, `t1_2d_hat`, `tr`
-- [ ] Define `KeyPair<P>` struct
-- [ ] Define `Seed = B32` type alias
+- [x] Redefine `Signature<P>` with fields: `c_tilde`, `z`, `h`
+- [x] Redefine `SigningKey<P>` with fields: `rho`, `K`, `tr`, `s1`, `s2`, `t0` + derived NTT values (`s1_hat`, `s2_hat`, `t0_hat`, `A_hat`)
+- [x] Redefine `VerifyingKey<P>` with fields: `rho`, `t1` + derived `A_hat`, `t1_2d_hat`, `tr`
+- [x] Define `KeyPair<P>` struct
+- [x] Define `Seed = B32` type alias
 
 ### Key Generation
 
-- [ ] Implement `KeyGen` trait — Algorithm 1 (ML-DSA.KeyGen)
-- [ ] Implement `key_gen_internal` — Algorithm 6 (ML-DSA.KeyGen_internal)
-- [ ] Implement `SigningKey::from_seed()`
+- [x] Implement `KeyGen` trait — Algorithm 1 (ML-DSA.KeyGen)
+- [x] Implement `key_gen_internal` — Algorithm 6 (ML-DSA.KeyGen_internal)
+- [x] Implement `SigningKey::from_seed()`
 
 ### Signing
 
-- [ ] Implement `sign_internal` — Algorithm 7 (ML-DSA.Sign_internal)
-- [ ] Implement `sign_deterministic` — Algorithm 2 (deterministic variant)
-- [ ] Implement `sign_randomized` — Algorithm 2 (randomized variant, feature-gated)
-- [ ] Implement `MuBuilder` for domain separation
+- [x] Implement `sign_internal` — Algorithm 7 (ML-DSA.Sign_internal)
+- [x] Implement `sign_deterministic` — Algorithm 2 (deterministic variant)
+- [x] Implement `sign_randomized` — Algorithm 2 (randomized variant, feature-gated)
+- [x] Implement `MuBuilder` for domain separation
 
 ### Verification
 
-- [ ] Implement `verify_internal` — Algorithm 8 (ML-DSA.Verify_internal)
-- [ ] Implement `verify_with_context` — Algorithm 3 (ML-DSA.Verify)
+- [x] Implement `verify_internal` — Algorithm 8 (ML-DSA.Verify_internal)
+- [x] Implement `verify_with_context` — Algorithm 3 (ML-DSA.Verify)
 
 ### Key/Signature Encoding
 
-- [ ] Implement `Signature::encode` / `Signature::decode` — Algorithms 26/27 (sigEncode/sigDecode)
-- [ ] Implement `VerifyingKey::encode` / `VerifyingKey::decode` — Algorithms 22/23 (pkEncode/pkDecode)
-- [ ] Implement `SigningKey::to_expanded` / `SigningKey::from_expanded` — Algorithms 24/25 (skEncode/skDecode)
+- [x] Implement `Signature::encode` / `Signature::decode` — Algorithms 26/27 (sigEncode/sigDecode)
+- [x] Implement `VerifyingKey::encode` / `VerifyingKey::decode` — Algorithms 22/23 (pkEncode/pkDecode)
+- [x] Implement `SigningKey::to_expanded` / `SigningKey::from_expanded` — Algorithms 24/25 (skEncode/skDecode)
 
 ---
 

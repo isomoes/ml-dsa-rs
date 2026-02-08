@@ -1,5 +1,6 @@
 //! Cryptographic functions for ML-DSA
 
+use hybrid_array::{Array, ArraySize};
 use sha3::{
     digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake256,
@@ -74,6 +75,13 @@ where
     /// Squeeze a newly allocated fixed-size output array.
     pub fn squeeze_new<const N: usize>(&mut self) -> [u8; N] {
         let mut output = [0u8; N];
+        self.squeeze(&mut output);
+        output
+    }
+
+    /// Squeeze a newly allocated `hybrid_array::Array` of the given typenum size.
+    pub fn squeeze_new_array<N: ArraySize>(&mut self) -> Array<u8, N> {
+        let mut output = Array::<u8, N>::default();
         self.squeeze(&mut output);
         output
     }

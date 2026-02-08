@@ -4,7 +4,7 @@
 //!
 //! ## What This Module Does
 //!
-//! **Main Goal**: Convert polynomials (arrays of 256 numbers) to/from compact byte arrays 
+//! **Main Goal**: Convert polynomials (arrays of 256 numbers) to/from compact byte arrays
 //! for storage and transmission.
 //!
 //! ### The Basic Problem
@@ -15,7 +15,7 @@
 //! ### Simple Example (4-bit encoding)
 //! ```text
 //! Input polynomial:  [1, 2, 15, 0, 7, 3, 12, 8]  (8 numbers)
-//! 
+//!
 //! Packing process:
 //! - Take 2 numbers at a time: (1,2), (15,0), (7,3), (12,8)  
 //! - Pack into bytes: 1+(2<<4)=33, 15+(0<<4)=15, 7+(3<<4)=55, 12+(8<<4)=140
@@ -49,8 +49,8 @@
 use core::fmt::Debug;
 use core::ops::{Div, Mul, Rem};
 use hybrid_array::{
+    typenum::{Gcd, Gcf, Prod, Quot, Unsigned, U0, U256, U32, U8},
     Array,
-    typenum::{Gcd, Gcf, Prod, Quot, U0, U8, U32, U256, Unsigned},
 };
 use num_traits::One;
 
@@ -136,7 +136,7 @@ where
 /// Pack polynomial coefficients into bytes using specified bit width
 ///
 /// Takes 256 field elements and packs them efficiently using D bits per element.
-/// 
+///
 /// **Example with 4-bit encoding**:
 /// - Input: [1, 2, 15, 0, ...] (256 numbers, each 0-15)
 /// - Process: Pack 2 numbers per byte (1 + (2<<4) = 33)
@@ -314,18 +314,18 @@ mod test {
         coeffs[0] = Elem::<TestField>::new(1);
         coeffs[1] = Elem::<TestField>::new(2);
         coeffs[2] = Elem::<TestField>::new(15); // Max value for 4-bit encoding (0-15)
-        
+
         let poly = Polynomial::new(coeffs);
-        
+
         // Encode and decode with 4-bit encoding
         let encoded = Encode::<U4>::encode(&poly);
         let decoded: Polynomial<TestField> = Encode::<U4>::decode(&encoded);
-        
+
         // Check that we get back the same values
         assert_eq!(decoded.0[0].0, 1);
         assert_eq!(decoded.0[1].0, 2);
         assert_eq!(decoded.0[2].0, 15);
-        
+
         // Test round-trip property
         assert_eq!(poly, decoded);
     }
@@ -335,18 +335,18 @@ mod test {
         // Create a test vector with 2 polynomials
         let mut poly1_coeffs = Array::default();
         let mut poly2_coeffs = Array::default();
-        
+
         poly1_coeffs[0] = Elem::<TestField>::new(5);
         poly2_coeffs[0] = Elem::<TestField>::new(10);
-        
+
         let poly1 = Polynomial::new(poly1_coeffs);
         let poly2 = Polynomial::new(poly2_coeffs);
         let vector: Vector<TestField, U2> = Vector::new(Array([poly1, poly2]));
-        
+
         // Encode and decode
         let encoded = Encode::<U4>::encode(&vector);
         let decoded: Vector<TestField, U2> = Encode::<U4>::decode(&encoded);
-        
+
         // Check round-trip property
         assert_eq!(vector, decoded);
         assert_eq!(decoded.0[0].0[0].0, 5);

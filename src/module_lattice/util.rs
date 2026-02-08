@@ -10,8 +10,8 @@ use core::mem::ManuallyDrop;
 use core::ops::{Div, Mul, Rem};
 use core::ptr;
 use hybrid_array::{
+    typenum::{Prod, Quot, Unsigned, U0},
     Array, ArraySize,
-    typenum::{Prod, Quot, U0, Unsigned},
 };
 
 /// Safely truncate an unsigned integer value to shorter representation
@@ -122,8 +122,8 @@ where
 mod test {
     use super::*;
     use hybrid_array::{
-        Array,
         typenum::{U2, U5},
+        Array,
     };
 
     #[test]
@@ -170,15 +170,15 @@ mod test {
         // Test u128 -> u32
         assert_eq!(u32::truncate(0x1_2345_6789_u128), 0x2345_6789_u32);
         assert_eq!(u32::truncate(u128::MAX), u32::MAX);
-        
+
         // Test u64 -> u32
         assert_eq!(u32::truncate(0x1234_5678_9abc_def0_u64), 0x9abc_def0_u32);
         assert_eq!(u32::truncate(u64::MAX), u32::MAX);
-        
+
         // Test usize -> u8
         assert_eq!(u8::truncate(0x1234_usize), 0x34_u8);
         assert_eq!(u8::truncate(usize::MAX), u8::MAX);
-        
+
         // Test usize -> u16
         assert_eq!(u16::truncate(0x1234_5678_usize), 0x5678_u16);
         assert_eq!(u16::truncate(usize::MAX), u16::MAX);
