@@ -2,6 +2,37 @@
 
 This document explains the math model behind `src/module_lattice/` and how each concept maps to the Rust code.
 
+## Why Module Lattices (Deeper Math Intro)
+
+Classical lattice cryptography starts from integer lattices:
+
+- A lattice in `R^n` is `L(B) = {B z : z in Z^n}` for a full-rank basis matrix `B`.
+- Security problems (SVP/CVP/SIS/LWE variants) are about finding short vectors or solving noisy linear relations.
+
+Module-lattice cryptography keeps the same hardness flavor but changes the algebraic domain from `Z` to a polynomial ring:
+
+- Base ring: `R = Z[X] / (X^n + 1)` with `n = 256` in ML-DSA.
+- Reduced ring: `R_q = R / qR = F_q[X] / (X^n + 1)`.
+- Work in modules `R_q^k` (vectors of `k` ring elements), not just vectors over `Z_q`.
+
+Why this matters:
+
+- **Compared with plain lattices:** structure gives faster arithmetic (especially via NTT) and smaller keys/signatures.
+- **Compared with ideal lattices:** modules retain useful structure but are less rigid than rank-1 ideals, giving a conservative middle ground.
+
+How this is still a lattice problem:
+
+- Each polynomial in `R_q` corresponds to `n` coefficients in `F_q`.
+- A vector in `R_q^k` corresponds to `n * k` coefficients.
+- So module operations over polynomials induce linear-algebra constraints over high-dimensional integer/coefficient lattices.
+
+ML-DSA uses this view in two layers at once:
+
+- **Algebra layer:** compactly describe operations as ring/module linear algebra (`A * s`, inner products, decompositions).
+- **Geometry layer:** control vector and coefficient sizes (norm bounds) so signatures are correct and leakage-resistant.
+
+In short: module lattices are "structured high-dimensional lattices" where polynomial algebra gives efficiency, while hardness is still tied to finding short relations in large lattices.
+
 ## 0) Toy-Size Intuition (Small Examples)
 
 Real ML-DSA uses degree 256 and large prime `q = 8_380_417`. For intuition, use tiny numbers first.
