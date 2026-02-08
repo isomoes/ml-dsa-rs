@@ -1,283 +1,78 @@
-# ML-DSA Architecture Documentation
+# ML-DSA Architecture
 
 ## Overview
 
-This document describes the architecture and design of the ML-DSA (Module-Lattice-Based Digital Signature Standard) implementation in Rust. ML-DSA is the standardized version of CRYSTALS-Dilithium, following the FIPS 204 specification.
+This crate follows the architecture of the RustCrypto `ml-dsa` implementation referenced in `README.md`:
 
-## Core Architecture
+- Reference: <https://github.com/RustCrypto/signatures/tree/master/ml-dsa>
+- Spec target: FIPS 204 (ML-DSA)
 
-### System Overview
+The design goal is to keep the same module boundaries as upstream so algorithm code can be ported and reviewed with minimal structural drift.
 
-```mermaid
-graph TB
-    subgraph "ML-DSA Implementation"
-        A[lib.rs - Main Interface] --> B[Parameter Sets]
-        A --> C[Key Generation]
-        A --> D[Signing Process]
-        A --> E[Verification Process]
+## RustCrypto Reference Architecture
 
-        B --> B1[ML-DSA-44<br/>Category 2]
-        B --> B2[ML-DSA-65<br/>Category 3]
-        B --> B3[ML-DSA-87<br/>Category 5]
+RustCrypto organizes ML-DSA into these core modules under `ml-dsa/src/`:
 
-        C --> F[algebra.rs<br/>Ring Operations]
-        C --> G[sampling.rs<br/>Random Generation]
-        C --> H[crypto.rs<br/>Hash Functions]
+- `lib.rs`: API types and algorithm orchestration.
+- `param.rs`: parameter traits, type-level sizes, and encoding size logic.
+- `algebra.rs`: ring/vector polynomial arithmetic.
+- `ntt.rs`: forward/inverse NTT operations.
+- `sampling.rs`: `expand_a`, `expand_s`, `expand_mask`, `sample_in_ball`.
+- `crypto.rs`: hash/XOF wrappers used by keygen/sign/verify flows.
+- `encode.rs`: packing/encoding and range encoding helpers.
+- `hint.rs`: `make_hint`, `use_hint`, hint pack/unpack.
+- `pkcs8.rs`: optional PKCS#8 key encoding support.
 
-        D --> F
-        D --> I[encode.rs<br/>Serialization]
-        D --> J[hint.rs<br/>Compression]
+At a flow level in upstream:
 
-        E --> F
-        E --> I
-        E --> J
+- Key generation is implemented through `KeyGen::from_seed` in `lib.rs`.
+- Signing is centered on `SigningKey::raw_sign_mu` in `lib.rs`, with sampling + hint modules.
+- Verification is centered on `VerifyingKey::raw_verify_mu` in `lib.rs`.
 
-        F --> K[ntt.rs<br/>Polynomial Multiplication]
-    end
-```
-
-### Module Dependencies
+## This Repository Layout
 
 ```mermaid
-graph LR
-    subgraph "Core Modules"
-        LIB[lib.rs]
-        PARAM[param.rs]
-        ALG[algebra.rs]
-        NTT[ntt.rs]
-        CRYPTO[crypto.rs]
-        SAMPLE[sampling.rs]
-        ENCODE[encode.rs]
-        HINT[hint.rs]
-        UTIL[util.rs]
-    end
+graph TD
+    A[src/lib.rs\npublic API and module wiring]
 
-    LIB --> PARAM
-    LIB --> ALG
-    LIB --> CRYPTO
-    LIB --> SAMPLE
-    LIB --> ENCODE
-    LIB --> HINT
+    A --> B[src/param.rs]
+    A --> C[src/algebra.rs]
+    A --> D[src/ntt.rs]
+    A --> E[src/sampling.rs]
+    A --> F[src/crypto.rs]
+    A --> G[src/encode.rs]
+    A --> H[src/hint.rs]
+    A --> I[src/util.rs]
+    A --> J[src/module_lattice/*\nshared lattice foundation]
 
-    ALG --> NTT
-    ALG --> UTIL
-    SAMPLE --> CRYPTO
-    ENCODE --> UTIL
-    HINT --> UTIL
+    K[benches/ml_dsa.rs] --> A
 ```
 
-### Parameter Sets
+## Mapping to RustCrypto
 
-ML-DSA defines three security levels with different parameter sets:
+- **Directly mirrored module names:** `param`, `algebra`, `ntt`, `sampling`, `crypto`, `encode`, `hint`.
+- **Orchestration model:** `lib.rs` is the integration point for keygen/sign/verify API types, matching upstream intent.
+- **Shared lattice layer:** this repo currently keeps `module_lattice` internal; upstream consumes `module_lattice` as a separate dependency.
+- **PKCS#8 integration:** RustCrypto has `src/pkcs8.rs`; this repo exposes `pkcs8` via features/dependencies but has not split a local `pkcs8.rs` module yet.
 
-- **ML-DSA-44**: Category 2 security (equivalent to AES-128)
-- **ML-DSA-65**: Category 3 security (equivalent to AES-192)
-- **ML-DSA-87**: Category 5 security (equivalent to AES-256)
+## Current State vs Target State
 
-Each parameter set defines:
+Implemented now:
 
-- Matrix dimensions (k × l)
-- Signature size bounds
-- Security parameters (η, γ₁, γ₂, τ, β)
+- Public key/signature wrapper types in `src/lib.rs`.
+- Parameter constants for ML-DSA-44/65/87 in `src/param.rs`.
+- Module scaffolding for arithmetic/sampling/encoding/hints.
+- Shared lattice foundation modules under `src/module_lattice/`.
 
-### Core Components
+Still to be completed to match RustCrypto behavior:
 
-#### 1. Algebraic Operations (`src/algebra.rs`)
+- Full key generation/signing/verification internals in `src/lib.rs`.
+- Concrete algorithm implementations in the scheme modules.
+- Byte-level encoding/decoding parity and full test-vector compatibility.
 
-Implements ring element operations over R_q = Z_q[X]/(X^256 + 1):
+## Design Principles
 
-- **Ring Element Structure**: Polynomials with coefficients in Z_q where q = 8,380,417
-- **Arithmetic Operations**: Addition, subtraction, multiplication in the ring
-- **Coefficient Bounds**: Manages coefficient ranges for different operations
-- **Infinity Norm**: Computes maximum absolute coefficient value
-
-#### 2. Number Theoretic Transform (`src/ntt.rs`)
-
-Provides efficient polynomial multiplication through NTT:
-
-- **Forward NTT**: Converts polynomial to frequency domain
-- **Inverse NTT**: Converts back to coefficient representation
-- **Optimized Implementation**: Uses precomputed roots of unity
-- **Montgomery Reduction**: Efficient modular arithmetic
-
-#### 3. Cryptographic Primitives (`src/crypto.rs`)
-
-Implements the required hash functions and expandable output functions:
-
-- **SHAKE-128/256**: For domain separation and random generation
-- **Expandable Output**: Generates pseudorandom polynomials
-- **Domain Separation**: Different contexts for key generation, signing, etc.
-
-#### 4. Sampling Operations (`src/sampling.rs`)
-
-Handles various sampling procedures:
-
-- **Uniform Sampling**: Generates uniform random polynomials
-- **Gaussian Sampling**: Samples from discrete Gaussian distributions
-- **Rejection Sampling**: Ensures proper distribution properties
-- **Challenge Generation**: Creates sparse ternary polynomials
-
-#### 5. Encoding/Decoding (`src/encode.rs`)
-
-Manages polynomial and signature serialization:
-
-- **Polynomial Packing**: Efficient bit packing for storage
-- **Signature Encoding**: Serializes signature components
-- **Key Encoding**: Handles public/private key serialization
-- **Bit Manipulation**: Low-level packing utilities
-
-#### 6. Hint System (`src/hint.rs`)
-
-Implements the hint mechanism for signature compression:
-
-- **Hint Generation**: Creates hints during signing
-- **Hint Verification**: Validates hints during verification
-- **Compression**: Reduces signature size through hints
-- **Bounds Checking**: Ensures hint validity
-
-### Key Generation, Signing, and Verification Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant KG as Key Generator
-    participant S as Signer
-    participant V as Verifier
-    participant A as Algebra Module
-    participant C as Crypto Module
-
-    Note over U,C: Key Generation Phase
-    U->>KG: Generate keypair
-    KG->>C: Generate matrix A using SHAKE-128
-    KG->>A: Sample secret vectors s₁, s₂
-    KG->>A: Compute t = As₁ + s₂
-    KG->>U: Return (pk, sk)
-
-    Note over U,C: Signing Phase
-    U->>S: Sign(message, sk)
-    S->>A: Sample random y
-    S->>A: Compute w = Ay
-    S->>C: Generate challenge c from w and message
-    S->>A: Calculate z = y + cs₁
-    S->>S: Generate hints h
-    S->>U: Return signature (c, z, h)
-
-    Note over U,C: Verification Phase
-    U->>V: Verify(message, signature, pk)
-    V->>V: Parse signature components
-    V->>A: Reconstruct verification values
-    V->>C: Recompute challenge from public data
-    V->>V: Validate hints and bounds
-    V->>U: Return valid/invalid
-```
-
-#### Key Generation
-
-1. **Matrix Generation**: Create random matrix A using SHAKE-128
-2. **Secret Generation**: Sample secret vectors s₁, s₂ from small coefficients
-3. **Public Key Computation**: Calculate t = As₁ + s₂
-4. **Key Encoding**: Serialize keys for storage/transmission
-
-#### Signing Process
-
-1. **Message Preprocessing**: Hash message with domain separation
-2. **Commitment Generation**: Sample random y, compute w = Ay
-3. **Challenge Generation**: Create challenge c from w and message
-4. **Response Computation**: Calculate z = y + cs₁
-5. **Hint Generation**: Create hints for verification optimization
-6. **Signature Assembly**: Combine (c, z, h) into final signature
-
-#### Verification Process
-
-1. **Signature Parsing**: Decode signature components
-2. **Public Key Operations**: Reconstruct verification values
-3. **Challenge Reconstruction**: Recompute challenge from public data
-4. **Hint Validation**: Verify hint correctness
-5. **Acceptance Decision**: Check all bounds and constraints
-
-## Security Properties
-
-### Lattice-Based Security
-
-- **Module-LWE Problem**: Security reduces to solving Module Learning With Errors
-- **CRYSTALS-Dilithium Proof**: Follows the security proof of the original scheme
-- **Quantum Resistance**: Designed to resist quantum computer attacks
-
-### Implementation Security
-
-- **Constant-Time Operations**: Prevents timing side-channel attacks
-- **Memory Safety**: Rust's ownership system prevents memory vulnerabilities
-- **No Unsafe Code**: `#![forbid(unsafe_code)]` ensures memory safety
-- **Zeroization Support**: Secure memory clearing for sensitive data
-
-## Performance Considerations
-
-### Optimization Strategies
-
-- **NTT Optimization**: Fast polynomial multiplication
-- **Precomputed Tables**: Avoid runtime calculations
-- **Batch Operations**: Process multiple elements efficiently
-- **Memory Layout**: Cache-friendly data structures
-
-### Benchmarking
-
-The implementation includes comprehensive benchmarks in `benches/ml_dsa.rs`:
-
-- **Key Generation**: Measures keygen performance across parameter sets
-- **Signing Speed**: Times signature generation
-- **Verification Speed**: Measures verification performance
-- **Memory Usage**: Tracks allocation patterns
-
-## Compatibility and Standards
-
-### Trait Implementation
-
-- **`signature` Crate**: Implements standard signing traits
-- **`Signer`/`Verifier`**: Generic interfaces for cryptographic operations
-- **Error Handling**: Comprehensive error types for failure cases
-
-### Serialization Support
-
-- **PKCS#8**: Standard key encoding format
-- **Raw Bytes**: Direct byte array serialization
-- **Const Generics**: Compile-time signature size specification
-
-## Performance Architecture
-
-```mermaid
-graph LR
-    subgraph "Optimization Layers"
-        A[Memory Layout<br/>Cache-friendly] --> B[NTT Optimization<br/>Fast multiplication]
-        B --> C[Precomputed Tables<br/>Avoid runtime calc]
-        C --> D[Batch Operations<br/>Multiple elements]
-        D --> E[Constant-Time<br/>Side-channel safe]
-    end
-
-    subgraph "Benchmarking"
-        F[Key Generation<br/>Performance]
-        G[Signing Speed<br/>Latency]
-        H[Verification Speed<br/>Throughput]
-        I[Memory Usage<br/>Allocation]
-    end
-
-    E --> F
-    E --> G
-    E --> H
-    E --> I
-```
-
-## Future Enhancements
-
-### Potential Optimizations
-
-- **SIMD Instructions**: Vectorized operations for better performance
-- **Hardware Acceleration**: GPU or specialized crypto hardware support
-- **Memory Optimization**: Reduced allocation for embedded systems
-- **Streaming Interface**: Process large messages efficiently
-
-### Additional Features
-
-- **Batch Verification**: Verify multiple signatures simultaneously
-- **Threshold Signatures**: Multi-party signature schemes
-- **Key Derivation**: Hierarchical key management
-- **Side-Channel Resistance**: Enhanced protection against attacks
+- Keep module boundaries consistent with RustCrypto for easier porting and review.
+- Separate parameter and encoding-size logic from arithmetic and protocol flow.
+- Keep high-level API stable while filling in algorithm internals.
+- Preserve optional feature boundaries (`rand_core`, `pkcs8`, `zeroize`, `alloc`).
