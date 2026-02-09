@@ -1,7 +1,19 @@
-#import "@preview/cetz:0.2.2": canvas, draw
+#import "@preview/basic-document-props:0.1.0": simple-page
+#import "@preview/cetz:0.3.4": canvas, draw
 
-#set page(width: 900pt)
-#set text(size: 11pt)
+#show: simple-page.with(
+  "isomo",
+  "",
+  middle-text: "ntt intro",
+  date: true,
+  numbering: true,
+  supress-mail-link: false,
+)
+
+#set heading(numbering: "1.1")
+#set math.equation(numbering: "(1)")
+#set text(size: 11pt, lang: "en")
+#show table: it => align(center, it)
 
 = Number Theoretic Transform (NTT) for ML-DSA
 
@@ -23,7 +35,7 @@ The NTT is the finite-field analogue of the FFT. It exploits a primitive root of
 
 #figure(
   caption: [NTT converts ring multiplication to pointwise multiplication.],
-  canvas(length: 8cm, {
+  canvas(length: 1.2cm, {
     import draw: *
 
     // Ring domain
@@ -35,7 +47,7 @@ The NTT is the finite-field analogue of the FFT. It exploits a primitive root of
     // NTT domain
     rect((2.2, -0.4), (4.4, 0.8), stroke: rgb("#DC2626"), radius: 0.08)
     content((3.3, 0.6), text(size: 9pt, fill: rgb("#DC2626"), weight: "bold")[NTT $T_q$])
-    content((3.3, 0.2), text(size: 9pt)[$hat(f) circle.small hat(g)$])
+    content((3.3, 0.2), text(size: 9pt)[$hat(f) #sym.circle.small hat(g)$])
     content((3.3, -0.1), text(size: 9pt, fill: rgb("#6B7280"))[$O(n)$])
 
     // Arrows
@@ -44,7 +56,7 @@ The NTT is the finite-field analogue of the FFT. It exploits a primitive root of
 
     line((2.1, 0.05), (0.1, 0.05), stroke: (paint: rgb("#7C3AED"), thickness: 1pt), mark: (end: ">"))
     content((1.1, -0.12), text(size: 8pt, fill: rgb("#7C3AED"))[$"NTT"^(-1)$])
-  })
+  }),
 )
 
 The key identity:
@@ -57,10 +69,12 @@ where $circle.small$ denotes pointwise (coefficient-by-coefficient) multiplicati
 
 The forward NTT uses the Cooley-Tukey butterfly. At each layer, pairs of elements are combined using a twiddle factor $zeta^("brv"(m))$:
 
-$ cases(
-  w[j] &<- w[j] + zeta^("brv"(m)) dot w[j + ell],
-  w[j + ell] &<- w[j] - zeta^("brv"(m)) dot w[j + ell]
-) $
+$
+  cases(
+    w[j] & <- w[j] + zeta^("brv"(m)) dot w[j + ell],
+    w[j + ell] & <- w[j] - zeta^("brv"(m)) dot w[j + ell]
+  )
+$
 
 where $"brv"$ is the 8-bit bit-reversal permutation.
 
@@ -68,69 +82,81 @@ The transform proceeds through 8 layers ($log_2 256 = 8$), halving the stride $e
 
 #figure(
   caption: [Butterfly structure: 8 layers, stride halves each step.],
-  canvas(length: 8cm, {
+  canvas(length: 1.2cm, {
     import draw: *
 
+    let sp = 1.4  // horizontal spacing between layers
+
     // Layer labels
-    for (i, l) in ((0, "128"), (1, "64"), (2, "32"), (3, "..."), (4, "2"), (5, "1")).enumerate() {
-      let x = i * 1.0
+    for (i, l) in ((0, "128"), (1, "64"), (2, "32"), (3, "..."), (4, "4"), (5, "2"), (6, "1")).enumerate() {
+      let x = i * sp
       content((x, 1.2), text(size: 8pt, fill: rgb("#6B7280"))[$ell=#l$])
     }
 
     // Signal lines
     for k in range(0, 8) {
-      let y = -k * 0.25
-      line((-0.3, y), (5.3, y), stroke: (paint: rgb("#D1D5DB"), thickness: 0.5pt))
-      content((-0.5, y), text(size: 7pt)[$w_#k$])
+      let y = -k * 0.3
+      line((-0.4, y), (6 * sp + 0.4, y), stroke: (paint: rgb("#D1D5DB"), thickness: 0.5pt))
+      content((-0.7, y), text(size: 7pt)[$w_#k$])
     }
 
-    // Butterfly crosses for first layer (stride 128 → pairs 0-4, 1-5, ...)
+    // Layer 1 butterflies (stride 128 → pairs 0-4)
     for pair in ((0, 4),) {
-      let y0 = -pair.at(0) * 0.25
-      let y1 = -pair.at(1) * 0.25
-      line((0.0, y0), (0.0, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
-      circle((0.0, y0), radius: 0.03, fill: rgb("#2563EB"))
-      circle((0.0, y1), radius: 0.03, fill: rgb("#2563EB"))
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((0 * sp, y0), (0 * sp, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
+      circle((0 * sp, y0), radius: 0.03, fill: rgb("#2563EB"))
+      circle((0 * sp, y1), radius: 0.03, fill: rgb("#2563EB"))
     }
 
-    // Layer 2 butterflies (stride 64 → pairs 0-2, 1-3, 4-6, 5-7)
+    // Layer 2 butterflies (stride 64 → pairs 0-2, 4-6)
     for pair in ((0, 2), (4, 6)) {
-      let y0 = -pair.at(0) * 0.25
-      let y1 = -pair.at(1) * 0.25
-      line((1.0, y0), (1.0, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
-      circle((1.0, y0), radius: 0.03, fill: rgb("#2563EB"))
-      circle((1.0, y1), radius: 0.03, fill: rgb("#2563EB"))
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((1 * sp, y0), (1 * sp, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
+      circle((1 * sp, y0), radius: 0.03, fill: rgb("#2563EB"))
+      circle((1 * sp, y1), radius: 0.03, fill: rgb("#2563EB"))
     }
 
     // Layer 3 butterflies (stride 32 → adjacent pairs)
     for pair in ((0, 1), (2, 3), (4, 5), (6, 7)) {
-      let y0 = -pair.at(0) * 0.25
-      let y1 = -pair.at(1) * 0.25
-      line((2.0, y0), (2.0, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
-      circle((2.0, y0), radius: 0.03, fill: rgb("#2563EB"))
-      circle((2.0, y1), radius: 0.03, fill: rgb("#2563EB"))
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((2 * sp, y0), (2 * sp, y1), stroke: (paint: rgb("#2563EB"), thickness: 1pt))
+      circle((2 * sp, y0), radius: 0.03, fill: rgb("#2563EB"))
+      circle((2 * sp, y1), radius: 0.03, fill: rgb("#2563EB"))
     }
 
-    // Dots for middle layers
-    content((3.0, -0.85), text(size: 10pt, fill: rgb("#9CA3AF"))[...])
+    // Dots for middle layers (layers 4-6: strides 16, 8)
+    content((3 * sp, -1.05), text(size: 10pt, fill: rgb("#9CA3AF"))[...])
 
-    // Last layers
+    // Layer 7 butterflies (stride 4 → adjacent pairs)
     for pair in ((0, 1), (2, 3), (4, 5), (6, 7)) {
-      let y0 = -pair.at(0) * 0.25
-      let y1 = -pair.at(1) * 0.25
-      line((4.0, y0), (4.0, y1), stroke: (paint: rgb("#DC2626"), thickness: 1pt))
-      circle((4.0, y0), radius: 0.03, fill: rgb("#DC2626"))
-      circle((4.0, y1), radius: 0.03, fill: rgb("#DC2626"))
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((4 * sp, y0), (4 * sp, y1), stroke: (paint: rgb("#7C3AED"), thickness: 1pt))
+      circle((4 * sp, y0), radius: 0.03, fill: rgb("#7C3AED"))
+      circle((4 * sp, y1), radius: 0.03, fill: rgb("#7C3AED"))
     }
 
+    // Layer 8a butterflies (stride 2 → adjacent pairs)
     for pair in ((0, 1), (2, 3), (4, 5), (6, 7)) {
-      let y0 = -pair.at(0) * 0.25
-      let y1 = -pair.at(1) * 0.25
-      line((5.0, y0), (5.0, y1), stroke: (paint: rgb("#DC2626"), thickness: 1pt))
-      circle((5.0, y0), radius: 0.03, fill: rgb("#DC2626"))
-      circle((5.0, y1), radius: 0.03, fill: rgb("#DC2626"))
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((5 * sp, y0), (5 * sp, y1), stroke: (paint: rgb("#DC2626"), thickness: 1pt))
+      circle((5 * sp, y0), radius: 0.03, fill: rgb("#DC2626"))
+      circle((5 * sp, y1), radius: 0.03, fill: rgb("#DC2626"))
     }
-  })
+
+    // Layer 8b butterflies (stride 1 → adjacent pairs)
+    for pair in ((0, 1), (2, 3), (4, 5), (6, 7)) {
+      let y0 = -pair.at(0) * 0.3
+      let y1 = -pair.at(1) * 0.3
+      line((6 * sp, y0), (6 * sp, y1), stroke: (paint: rgb("#DC2626"), thickness: 1pt))
+      circle((6 * sp, y0), radius: 0.03, fill: rgb("#DC2626"))
+      circle((6 * sp, y1), radius: 0.03, fill: rgb("#DC2626"))
+    }
+  }),
 )
 
 Rust implementation (from `src/ntt.rs`):
@@ -173,10 +199,12 @@ The const generics `LEN` (stride) and `ITERATIONS` (number of blocks) ensure all
 
 The inverse NTT uses the Gentleman-Sande butterfly, reversing the layer order and negating the twiddle factors:
 
-$ cases(
-  w[j] &<- w[j] + w[j + ell],
-  w[j + ell] &<- (-zeta^("brv"(m))) dot (w[j] - w[j + ell])
-) $
+$
+  cases(
+    w[j] & <- w[j] + w[j + ell],
+    w[j + ell] & <- (-zeta^("brv"(m))) dot (w[j] - w[j + ell])
+  )
+$
 
 After all 8 layers, every coefficient is scaled by $256^(-1) mod q = 8347681$:
 
@@ -244,7 +272,7 @@ Cost per multiplication: $O(n log n) = O(2048)$ --- a *32x speedup*.
 
 #figure(
   caption: [NTT usage in ML-DSA: matrix $bold(A)$ stays in NTT domain.],
-  canvas(length: 8cm, {
+  canvas(length: 1.2cm, {
     import draw: *
 
     // Key gen box
@@ -268,7 +296,7 @@ Cost per multiplication: $O(n log n) = O(2048)$ --- a *32x speedup*.
     // Arrows
     line((1.9, 0.3), (2.2, 0.3), stroke: (paint: rgb("#6B7280"), thickness: 0.8pt), mark: (end: ">"))
     line((4.5, 0.3), (4.8, 0.3), stroke: (paint: rgb("#6B7280"), thickness: 0.8pt), mark: (end: ">"))
-  })
+  }),
 )
 
 == 8. Summary
