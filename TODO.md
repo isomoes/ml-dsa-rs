@@ -265,6 +265,7 @@ These two tracks can proceed **concurrently**.
 **Depends on**: Level 5
 
 - [x] Add `docs/module_lattice.md` math-and-code overview for shared module lattice layer
+- [x] Add `docs/ntt.typ` Typst document explaining NTT with math formulas, figures, and code
 - [ ] Complete API documentation (resolve `missing_docs` warnings)
 - [ ] Add usage examples in doc comments
 - [ ] Add benchmarks for key generation, signing, verification
