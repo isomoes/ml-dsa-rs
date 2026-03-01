@@ -557,60 +557,30 @@ The compact encoding uses `ω + K` bytes: the first `ω` bytes store the indices
 All security-level-dependent constants are captured in a trait hierarchy, enabling a single generic implementation to serve all three ML-DSA variants.
 
 ```mermaid
-classDiagram
-    class ParameterSet {
-        <<trait>>
-        +K : ArraySize
-        +L : ArraySize
-        +Eta : SamplingSize
-        +Gamma1 : MaskSamplingSize
-        +Gamma2 : Unsigned
-        +TwoGamma2 : Unsigned
-        +W1Bits : EncodingSize
-        +Lambda : ArraySize
-        +Omega : ArraySize
-        +TAU : usize
-        +BETA : u32
-    }
+flowchart TB
+    PS["ParameterSet trait<br/>K, L, Eta, Gamma1, Gamma2, TwoGamma2,<br/>W1Bits, Lambda, Omega, TAU, BETA"]
 
-    class SigningKeyParams {
-        <<trait>>
-        +encode_s1() / decode_s1()
-        +encode_s2() / decode_s2()
-        +encode_t0() / decode_t0()
-        +concat_sk() / split_sk()
-    }
+    SKP["SigningKeyParams trait<br/>encode/decode s1, s2, t0<br/>concat_sk / split_sk"]
+    VKP["VerifyingKeyParams trait<br/>encode/decode t1<br/>concat_vk / split_vk"]
+    SIGP["SignatureParams trait<br/>encode/decode w1, z<br/>concat_sig / split_sig<br/>GAMMA1_MINUS_BETA, GAMMA2_MINUS_BETA"]
 
-    class VerifyingKeyParams {
-        <<trait>>
-        +encode_t1() / decode_t1()
-        +concat_vk() / split_vk()
-    }
+    MDP["MlDsaParams trait<br/>combines SKP + VKP + SIGP<br/>plus Debug + Default + PartialEq + Clone"]
 
-    class SignatureParams {
-        <<trait>>
-        +encode_w1() / decode_w1()
-        +encode_z() / decode_z()
-        +concat_sig() / split_sig()
-        +GAMMA1_MINUS_BETA : u32
-        +GAMMA2_MINUS_BETA : u32
-    }
+    P44["MlDsa44"]
+    P65["MlDsa65"]
+    P87["MlDsa87"]
 
-    class MlDsaParams {
-        <<trait>>
-        (combines all above + Debug + Default + PartialEq + Clone)
-    }
+    PS -->|"blanket impl"| SKP
+    PS -->|"blanket impl"| VKP
+    PS -->|"blanket impl"| SIGP
 
-    ParameterSet <|-- SigningKeyParams : blanket impl
-    ParameterSet <|-- VerifyingKeyParams : blanket impl
-    ParameterSet <|-- SignatureParams : blanket impl
-    SigningKeyParams <|-- MlDsaParams
-    VerifyingKeyParams <|-- MlDsaParams
-    SignatureParams <|-- MlDsaParams
+    SKP --> MDP
+    VKP --> MDP
+    SIGP --> MDP
 
-    MlDsaParams <|.. MlDsa44
-    MlDsaParams <|.. MlDsa65
-    MlDsaParams <|.. MlDsa87
+    MDP --> P44
+    MDP --> P65
+    MDP --> P87
 ```
 
 The concrete parameter values (from FIPS 204, Tables 1-2):
