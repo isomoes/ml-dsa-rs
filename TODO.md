@@ -266,6 +266,7 @@ These two tracks can proceed **concurrently**.
 
 - [x] Add `docs/module_lattice.md` math-and-code overview for shared module lattice layer
 - [x] Add `docs/ntt.typ` Typst document explaining NTT with math formulas, figures, and code
+- [x] Add `docs/implement.md` detailed implementation guide with code snippets and Mermaid diagrams
 - [ ] Complete API documentation (resolve `missing_docs` warnings)
 - [ ] Add usage examples in doc comments
 - [ ] Add benchmarks for key generation, signing, verification
