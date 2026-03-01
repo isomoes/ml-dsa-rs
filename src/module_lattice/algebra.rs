@@ -60,6 +60,11 @@ pub trait Field: Copy + Default + Debug + PartialEq {
 #[macro_export]
 macro_rules! define_field {
     ($field:ident, $int:ty, $long:ty, $longlong:ty, $q:literal) => {
+        #[doc = concat!(
+                    "Finite field marker type for modulus ",
+                    stringify!($q),
+                    "."
+                )]
         #[derive(Copy, Clone, Default, Debug, PartialEq)]
         pub struct $field;
 
